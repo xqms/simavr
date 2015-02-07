@@ -109,7 +109,7 @@ static uint8_t avr_uart_read(struct avr_t * avr, avr_io_addr_t addr, void * para
 	}
 	uint8_t v = uart_fifo_read(&p->input);
 
-//	TRACE(printf("UART read %02x %s\n", v, uart_fifo_isempty(&p->input) ? "EMPTY!" : "");)
+	TRACE(printf("UART read %02x %s\n", v, uart_fifo_isempty(&p->input) ? "EMPTY!" : "");)
 	avr->data[addr] = v;
 	// made to trigger potential watchpoints
 	v = avr_core_watch_read(avr, addr);
@@ -117,6 +117,12 @@ static uint8_t avr_uart_read(struct avr_t * avr, avr_io_addr_t addr, void * para
 	// trigger timer if more characters are pending
 	if (!uart_fifo_isempty(&p->input))
 		avr_cycle_timer_register_usec(avr, p->usec_per_byte, avr_uart_rxc_raise, p);
+
+	// if reception is idle and the fifo is empty, tell whomever there is room
+	if (avr_regbit_get(avr, p->rxen) && uart_fifo_isempty(&p->input)) {
+		avr_raise_irq(p->io.irq + UART_IRQ_OUT_XOFF, 0);
+		avr_raise_irq(p->io.irq + UART_IRQ_OUT_XON, 1);
+	}
 
 	return v;
 }
