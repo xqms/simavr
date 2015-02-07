@@ -127,10 +127,8 @@ static uint8_t avr_uart_read(struct avr_t * avr, avr_io_addr_t addr, void * para
 	return v;
 }
 
-static void avr_uart_baud_write(struct avr_t * avr, avr_io_addr_t addr, uint8_t v, void * param)
+static void avr_uart_configure_baudrate(struct avr_t* avr, struct avr_uart_t* p)
 {
-	avr_uart_t * p = (avr_uart_t *)param;
-	avr_core_watch_write(avr, addr, v);
 	uint32_t val = avr->data[p->r_ubrrl] | (avr->data[p->r_ubrrh] << 8);
 	uint32_t baud = avr->frequency / (val+1);
 	if (avr_regbit_get(avr, p->u2x))
@@ -148,6 +146,14 @@ static void avr_uart_baud_write(struct avr_t * avr, avr_io_addr_t addr, uint8_t 
 	// TODO: Use the divider value and calculate the straight number of cycles
 	p->usec_per_byte = 1000000 / (baud / word_size);
 	AVR_LOG(avr, LOG_TRACE, "UART: Roughly %d usec per bytes\n", (int)p->usec_per_byte);
+}
+
+
+static void avr_uart_baud_write(struct avr_t * avr, avr_io_addr_t addr, uint8_t v, void * param)
+{
+	avr_uart_t * p = (avr_uart_t *)param;
+	avr_core_watch_write(avr, addr, v);
+	avr_uart_configure_baudrate(avr, p);
 }
 
 static void avr_uart_udr_write(struct avr_t * avr, avr_io_addr_t addr, uint8_t v, void * param)
@@ -203,14 +209,17 @@ static void avr_uart_write(struct avr_t * avr, avr_io_addr_t addr, uint8_t v, vo
 		//uint8_t udre = avr_regbit_get(avr, p->udrc.raised);
 		uint8_t txc = avr_regbit_get(avr, p->txc.raised);
 
-                // setting u2x (double uart transmission speed) may also involve
-                // overwriting read only flags, therefore set u2x explicitly.
-                if(addr == p->u2x.reg) {
-                	avr_regbit_setto_raw(avr, p->u2x, v);
-                }
-
 		//avr_clear_interrupt_if(avr, &p->udrc, udre);
 		avr_clear_interrupt_if(avr, &p->txc, txc);
+	}
+
+	// setting u2x (double uart transmission speed) may also involve
+	// overwriting read only flags, therefore set u2x explicitly.
+	if(addr == p->u2x.reg) {
+		avr_regbit_setto_raw(avr, p->u2x, v);
+
+		// After setting U2X, we need to recalculate the baud rate.
+		avr_uart_configure_baudrate(avr, p);
 	}
 }
 
@@ -307,6 +316,7 @@ void avr_uart_init(avr_t * avr, avr_uart_t * p)
 
 	avr_register_io_write(avr, p->r_udr, avr_uart_udr_write, p);
 	avr_register_io_read(avr, p->r_udr, avr_uart_read, p);
+
 	// monitor code that reads the rxc flag, and delay it a bit
 	avr_register_io_read(avr, p->rxc.raised.reg, avr_uart_rxc_read, p);
 
@@ -316,5 +326,7 @@ void avr_uart_init(avr_t * avr, avr_uart_t * p)
 		avr_register_io_write(avr, p->r_ucsra, avr_uart_write, p);
 	if (p->r_ubrrl)
 		avr_register_io_write(avr, p->r_ubrrl, avr_uart_baud_write, p);
+	if (p->u2x.reg)
+		avr_register_io_write(avr, p->u2x.reg, avr_uart_write, p);
 }
 
