@@ -111,6 +111,7 @@ const struct mcu_t {
 		.rxen = AVR_IO_REGBIT(UCSR0B, RXEN0),
 		.ucsz = AVR_IO_REGBITS(UCSR0C, UCSZ00, 0x3), // 2 bits
 		.ucsz2 = AVR_IO_REGBIT(UCSR0B, UCSZ02),		// 1 bits
+		.u2x = AVR_IO_REGBIT(UCSR0A, U2X0),
 
 		.r_ucsra = UCSR0A,
 		.r_ucsrb = UCSR0B,
@@ -142,6 +143,7 @@ const struct mcu_t {
 		.rxen = AVR_IO_REGBIT(UCSR1B, RXEN1),
 		.ucsz = AVR_IO_REGBITS(UCSR1C, UCSZ10, 0x3), // 2 bits
 		.ucsz2 = AVR_IO_REGBIT(UCSR1B, UCSZ12),		// 1 bits
+		.u2x = AVR_IO_REGBIT(UCSR1A, U2X1),
 
 		.r_ucsra = UCSR1A,
 		.r_ucsrb = UCSR1B,
@@ -174,6 +176,7 @@ const struct mcu_t {
 		.rxen = AVR_IO_REGBIT(UCSR2B, RXEN2),
 		.ucsz = AVR_IO_REGBITS(UCSR2C, UCSZ20, 0x3), // 2 bits
 		.ucsz2 = AVR_IO_REGBIT(UCSR2B, UCSZ22),		// 1 bits
+		.u2x = AVR_IO_REGBIT(UCSR2A, U2X2),
 
 		.r_ucsra = UCSR2A,
 		.r_ucsrb = UCSR2B,
@@ -206,6 +209,7 @@ const struct mcu_t {
 		.rxen = AVR_IO_REGBIT(UCSR3B, RXEN3),
 		.ucsz = AVR_IO_REGBITS(UCSR3C, UCSZ30, 0x3), // 2 bits
 		.ucsz2 = AVR_IO_REGBIT(UCSR3B, UCSZ32),		// 1 bits
+		.u2x = AVR_IO_REGBIT(UCSR3A, U2X3),
 
 		.r_ucsra = UCSR3A,
 		.r_ucsrb = UCSR3B,
